@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/krishnaGauss/ExDate/NSE_scraper/fetchprice"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -92,8 +94,11 @@ func main() {
 	bodyBytes, _ := io.ReadAll(resp2.Body)
 
 	var allActions []CorporateAction
+	respBodyBytes := string(bodyBytes) // using a temporary string
+	_ = respBodyBytes
 	if err := json.Unmarshal(bodyBytes, &allActions); err != nil {
-		log.Fatalf("Failed to parse JSON: %v", err)
+		// Log but don't strictly fail on parse error if structure is slightly off, some endpoints return wrappers
+		log.Printf("Failed to parse JSON: %v. Body sample: %s", err, string(bodyBytes[:100]))
 	}
 
 	var upcomingDividends []CorporateAction
@@ -112,10 +117,25 @@ func main() {
 		div := upcomingDividends[i]
 		amount := extractDividendAmount(div.Subject)
 
+		// Fetch the live price using the fetchprice package
+		livePrice := fetchprice.GetLivePrice(div.Symbol)
+
 		fmt.Printf("%s (%s)\n", div.Symbol, div.Comp)
 		fmt.Printf("Ex-Date: %s\n", div.ExDate)
 		fmt.Printf("Raw Action: %s\n", div.Subject)
-		fmt.Printf("Extracted Dividend: ₹%s\n\n", amount)
+		fmt.Printf("Extracted Dividend: ₹%s\n", amount)
+		if livePrice > 0 {
+			fmt.Printf("Live Price: ₹%.2f\n", livePrice)
+
+			// Optional: Calculate and print the yield if amount is valid
+			if amtFloat, err := strconv.ParseFloat(amount, 64); err == nil && amtFloat > 0 {
+				yield := (amtFloat / livePrice) * 100
+				fmt.Printf("Calculated Yield: %.2f%%\n", yield)
+			}
+		} else {
+			fmt.Printf("Live Price: Unavailable\n")
+		}
+		fmt.Println()
 	}
 
 }
