@@ -45,9 +45,9 @@ const MOCK_DATA = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500/30">
+    <main className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500/30 overflow-x-hidden">
       {/* Container */}
-      <div className="max-w-3xl mx-auto px-6 py-16 md:py-24">
+      <div className="w-full mx-auto px-6 pt-24 pb-16 md:pt-32 md:pb-24">
         
         {/* Hero Section */}
         <header className="mb-16 text-center md:text-left space-y-5">
@@ -65,7 +65,7 @@ export default function Home() {
           {MOCK_DATA.map((stock) => (
             <div 
               key={stock.id} 
-              className="group flex flex-col md:flex-row md:items-center justify-between gap-6 p-5 rounded-lg border border-neutral-800 bg-neutral-950/50 hover:bg-neutral-900/50 transition-colors"
+              className="max-w-3xl mx-auto w-full group flex flex-col md:flex-row md:items-center justify-between gap-6 p-5 rounded-lg border border-neutral-800 bg-neutral-950/50 hover:bg-neutral-900/50 transition-colors"
             >
               {/* Left Column: Company Info */}
               <div className="flex-1 space-y-2">
@@ -117,6 +117,13 @@ export default function Home() {
             </div>
           ))}
         </section>
+
+        {/* Disclaimer */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-neutral-600">
+            * The data displayed on this page is for demonstration purposes only and does not represent real-time market data.
+          </p>
+        </div>
 
       </div>
     </main>
