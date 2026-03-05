@@ -10,16 +10,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/krishnaGauss/ExDate/NSE_scraper/db"
 	"github.com/krishnaGauss/ExDate/NSE_scraper/routes"
 	"github.com/krishnaGauss/ExDate/NSE_scraper/scraper"
+	"github.com/robfig/cron/v3"
 	"golang.org/x/net/publicsuffix"
 )
 
-func Scrape(s *scraper.Scraper, ctx context.Context){
+func scrape(s *scraper.Scraper, ctx context.Context){
 	log.Println("Scraping NSE in background...")
 	err := s.ScrapeCorporateActions(ctx)
 	if err != nil {
@@ -83,7 +84,30 @@ func main() {
 
 	// Create and run the scraper
 	s := scraper.New(client, dbpool)
-	go Scrape(s, ctx)
+
+	c := cron.New(cron.WithLocation(time.Local))
+
+	//the 11AM job
+	_, err = c.AddFunc("0 11 * * *", func() {
+		log.Println("Running scheduled 11:00 AM scrape...")
+		scrape(s, ctx)
+	})
+	if err != nil {
+		log.Fatalf("Failed to schedule 11 AM job: %v", err)
+	}
+	// Add the 4 PM job
+	_, err = c.AddFunc("0 16 * * *", func() {
+		log.Println("Running scheduled 4:00 PM scrape...")
+		scrape(s, ctx)
+	})
+	if err != nil {
+		log.Fatalf("Failed to schedule 4 PM job: %v", err)
+	}
+
+	c.Start()
+	defer c.Stop()
+
+	go scrape(s, ctx)
 
 	srv := &http.Server{
 		Addr:    ":8080",
