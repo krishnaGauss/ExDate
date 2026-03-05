@@ -11,6 +11,7 @@ type CorporateAction struct {
 }
 
 type Dividend struct {
+	ID              int     `json:"id"`
 	Symbol          string  `json:"symbol"`
 	CompanyName     string  `json:"company_name"`
 	ExDate          string  `json:"ex_date"`
