@@ -45,6 +45,7 @@ func main() {
 
 	config.AllowOrigins = []string{
 		os.Getenv("ALLOWED_URL"),
+		"https://ex-date.vercel.app/",
 	}
 
 	config.AllowMethods = []string{
