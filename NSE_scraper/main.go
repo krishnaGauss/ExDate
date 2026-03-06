@@ -6,31 +6,35 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
-	"os/signal"
-	"syscall"
+	"strings"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/krishnaGauss/ExDate/NSE_scraper/db"
 	"github.com/krishnaGauss/ExDate/NSE_scraper/routes"
 	"github.com/krishnaGauss/ExDate/NSE_scraper/scraper"
-	"github.com/robfig/cron/v3"
 	"golang.org/x/net/publicsuffix"
 )
 
-func scrape(s *scraper.Scraper, ctx context.Context){
+var ginLambda *ginadapter.GinLambdaV2
+var s *scraper.Scraper
+
+func scrape(s *scraper.Scraper, ctx context.Context) {
 	log.Println("Scraping NSE in background...")
 	err := s.ScrapeCorporateActions(ctx)
 	if err != nil {
 		log.Printf("Scraper encountered an error: %v", err)
 	}
-
 }
 
-func main() {
-	log.Println("Initializing NSE Scraper...")
+// init() runs ONCE when the Lambda container "Cold Starts"
+func init() {
+	log.Println("Initializing NSE Scraper Lambda Container...")
 
 	err := godotenv.Load()
 	if err != nil {
@@ -39,9 +43,9 @@ func main() {
 
 	ctx := context.Background()
 
-	//initialising router
+	// 1. Initialise router
 	router := gin.Default()
-	config:=cors.DefaultConfig()
+	config := cors.DefaultConfig()
 
 	config.AllowOrigins = []string{
 		os.Getenv("ALLOWED_URL"),
@@ -58,21 +62,18 @@ func main() {
 
 	router.Use(cors.New(config))
 
-
-
-	// Initializing db connection
+	// 2. Initialise db connection
 	dbpool, err := db.InitDB(ctx)
 	if err != nil {
-		log.Printf("Failed to initialize database: %v", err)
-		os.Exit(1)
+		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer dbpool.Close()
 	log.Println("Database connection established.")
 
-	// Registering routes with the database dependency
 	routes.RegisterRoutes(router, dbpool)
 
-	// initializing cookie jar with public suffix list to ensure security against TLD
+	// 4. Wrap Gin in Lambda Adapter (No options needed here)
+	ginLambda = ginadapter.NewV2(router)
+
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	if err != nil {
 		log.Fatalf("Failed to create cookie jar: %v", err)
@@ -83,56 +84,25 @@ func main() {
 		Timeout: 30 * time.Second,
 	}
 
-	// Create and run the scraper
-	s := scraper.New(client, dbpool)
+	// Store scraper globally so the Handler can trigger it later
+	s = scraper.New(client, dbpool)
+}
 
-	c := cron.New(cron.WithLocation(time.Local))
-
-	//the 11AM job
-	_, err = c.AddFunc("0 11 * * *", func() {
-		log.Println("Running scheduled 11:00 AM scrape...")
+func Handler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	if req.Headers["secret-cron"] == "true" {
+		log.Println("Received trigger from EventBridge Cron!")
 		scrape(s, ctx)
-	})
-	if err != nil {
-		log.Fatalf("Failed to schedule 11 AM job: %v", err)
-	}
-	// Add the 4 PM job
-	_, err = c.AddFunc("0 16 * * *", func() {
-		log.Println("Running scheduled 4:00 PM scrape...")
-		scrape(s, ctx)
-	})
-	if err != nil {
-		log.Fatalf("Failed to schedule 4 PM job: %v", err)
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: 200,
+			Body:       `{"status": "Scraping completed successfully"}`,
+		}, nil
 	}
 
-	c.Start()
-	defer c.Stop()
+	req.RawPath = strings.TrimPrefix(req.RawPath, "/default")
+	return ginLambda.ProxyWithContext(ctx, req)
+}
 
-	go scrape(s, ctx)
-
-	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: router,
-	}
-
-	//running server in a separate go routine
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down server...")
-
-	ctx2, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx2); err != nil {
-		log.Println("Server Shutdown:", err)
-	}
-	log.Println("Server exiting")
-
+func main() {
+	// Start the AWS Lambda listener
+	lambda.Start(Handler)
 }
