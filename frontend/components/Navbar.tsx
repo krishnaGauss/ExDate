@@ -18,7 +18,10 @@ export default function Navbar() {
         </div>
 
         {/* Center: Tabs (Desktop) */}
-        <div className="hidden sm:flex flex-1 justify-center gap-8">
+        <div className="hidden sm:flex flex-1 justify-center gap-25">
+          <Link href="/products" className="text-lg font-medium text-neutral-400 hover:text-white transition-colors">
+            Products
+          </Link>
           <Link href="/about" className="text-lg font-medium text-neutral-400 hover:text-white transition-colors">
             About Us
           </Link>
@@ -45,6 +48,13 @@ export default function Navbar() {
       {isOpen && (
         <div className="sm:hidden border-t border-neutral-800 bg-black/95 backdrop-blur-md">
           <div className="px-4 py-6 flex flex-col gap-4">
+            <Link 
+              href="/products" 
+              onClick={() => setIsOpen(false)}
+              className="text-lg font-medium text-neutral-400 hover:text-white transition-colors"
+            >
+              Products
+            </Link>
             <Link 
               href="/about" 
               onClick={() => setIsOpen(false)}

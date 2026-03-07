@@ -1,7 +1,29 @@
 @import "tailwindcss";
 
+@theme {
+  --animate-fade-in: fade-in 1s ease-out forwards;
+  --animate-slide-up: slide-up 1s ease-out forwards;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  scroll-behavior: smooth;
 }
