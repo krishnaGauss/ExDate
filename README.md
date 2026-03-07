@@ -1,6 +1,6 @@
 # NSE Dividend Scraper
 
-A lightweight Go script to scrape and extract upcoming equity dividend actions from the National Stock Exchange of India (NSE).
+A Go-based script that scrapes and extracts upcoming equity dividend actions from the National Stock Exchange of India (NSE), enabling investors to automatically incorporate these opportunities into their portfolios with risk assessment insights from industry experts.
 
 ## Requirements
 
