@@ -3,10 +3,12 @@
 import { ArrowUpDown, AlertCircle, Search } from "lucide-react";
 import { useState } from "react";
 import { Dividend } from "../app/info/types";
+import DividendOverlay from "./DividendOverlay";
 
 export default function DividendTable({ initialDividends }: { initialDividends: Dividend[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [now] = useState(new Date());
+  const [selectedDividend, setSelectedDividend] = useState<Dividend | null>(null);
 
   const filteredDividends = initialDividends
     .map((dividend) => {
@@ -68,7 +70,7 @@ export default function DividendTable({ initialDividends }: { initialDividends: 
                 <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs">
                   <div className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors">
                     Calculated Yield
-                    {/* <ArrowUpDown className="w-3.5 h-3.5" /> */}
+                    <ArrowUpDown className="w-3.5 h-3.5" />
                   </div>
                 </th>
                 <th className="px-12 py-4 font-semibold uppercase tracking-wider text-xs">
@@ -81,12 +83,13 @@ export default function DividendTable({ initialDividends }: { initialDividends: 
                 filteredDividends.map((item, index) => (
                   <tr 
                     key={item.id} 
-                    className="hover:bg-neutral-900/30 transition-colors group"
+                    onClick={() => setSelectedDividend(item)}
+                    className="hover:bg-neutral-900/30 transition-colors group cursor-pointer"
                   >
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-white">{item.symbol}</span>
-                        <span className="text-xs text-neutral-500 truncate max-w-37.5 md:max-w-xs">
+                        <span className="font-semibold text-white group-hover:text-emerald-400 transition-colors">{item.symbol}</span>
+                        <span className="text-xs text-neutral-500 truncate max-w-37.5 md:max-w-xs transition-colors group-hover:text-neutral-400">
                           {item.company_name}
                         </span>
                       </div>
@@ -139,6 +142,18 @@ export default function DividendTable({ initialDividends }: { initialDividends: 
           * Sorted by closest Ex-Date. Yields are updated once during market hours and once after market hours.
         </p>
       </div>
+
+      {/* Pop-up Overlay for Selected Row */}
+      {selectedDividend && (
+        <DividendOverlay
+          isOpen={true}
+          onClose={() => setSelectedDividend(null)}
+          stockSymbol={selectedDividend.symbol}
+          companyName={selectedDividend.company_name}
+          livePrice={selectedDividend.live_price}
+          dividendPerShare={selectedDividend.dividend_amount}
+        />
+      )}
     </>
   );
 }
