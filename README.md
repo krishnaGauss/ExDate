@@ -4,7 +4,7 @@ A lightweight Go script to scrape and extract upcoming equity dividend actions f
 
 ## Requirements
 
-- Go 1.18+
+- Go 1.25.7+
 
 ## Usage
 
