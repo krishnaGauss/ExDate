@@ -29,10 +29,15 @@ export default function DividendTable({ initialDividends }: { initialDividends: 
         dividend.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
         dividend.company_name.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Hide if ex-date is exactly today (0) or in the past (< 0)
-      const validDate = dividend.daysToExDate > 0;
+      const exDateObj = new Date(dividend.ex_date);
+      const today = new Date(now);
 
-      return matchSearch && validDate;
+      // Check if the ex-date falls in the current calendar month and year
+      const isCurrentMonth = 
+        exDateObj.getMonth() === today.getMonth() &&
+        exDateObj.getFullYear() === today.getFullYear();
+
+      return matchSearch && isCurrentMonth;
     });
 
   return (
@@ -114,14 +119,25 @@ export default function DividendTable({ initialDividends }: { initialDividends: 
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className={`font-medium flex items-center gap-2 ${item.daysToExDate <= 4 ? 'text-orange-400' : 'text-neutral-300'}`}>
-                        {item.daysToExDate <= 4 && (
+                      <div className={`font-medium flex items-center gap-2 
+                        ${item.daysToExDate < 0 ? 'text-neutral-600' : 
+                          item.daysToExDate === 0 ? 'text-emerald-400 font-bold' : 
+                          item.daysToExDate <= 4 ? 'text-orange-400' : 'text-neutral-300'}`}
+                      >
+                        {item.daysToExDate > 0 && item.daysToExDate <= 4 && (
                           <div className="flex items-center gap-1.5 bg-orange-500/10 px-2 py-1 rounded border border-orange-500/20" title={`Only ${item.daysToExDate} days left!`}>
                             <AlertCircle className="w-4 h-4 animate-pulse" />
                             <span className="text-xs font-bold leading-none">{item.daysToExDate}d</span>
                           </div>
                         )}
-                        {item.ex_date}
+                        {item.daysToExDate === 0 && (
+                          <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+                            <span className="text-xs font-bold leading-none">Today</span>
+                          </div>
+                        )}
+                        <span className={item.daysToExDate < 0 ? 'line-through opacity-70' : ''}>
+                           {item.ex_date}
+                        </span>
                       </div>
                     </td>
                   </tr>
