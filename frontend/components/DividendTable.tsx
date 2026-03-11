@@ -32,12 +32,15 @@ export default function DividendTable({ initialDividends }: { initialDividends: 
       const exDateObj = new Date(dividend.ex_date);
       const today = new Date(now);
 
-      // Check if the ex-date falls in the current calendar month and year
-      const isCurrentMonth = 
-        exDateObj.getMonth() === today.getMonth() &&
-        exDateObj.getFullYear() === today.getFullYear();
+      // We only care about the Month and Year, not the specific day.
+      // Set both dates to the 1st of the month at midnight
+      const exMonthStart = new Date(exDateObj.getFullYear(), exDateObj.getMonth(), 1).getTime();
+      const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
 
-      return matchSearch && isCurrentMonth;
+      // Show if the dividend's month is the current month OR any future month
+      const isCurrentOrFutureMonth = exMonthStart >= currentMonthStart;
+
+      return matchSearch && isCurrentOrFutureMonth;
     });
 
   return (
