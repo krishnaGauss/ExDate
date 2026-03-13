@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "ExDate | The honest Indian Dividend Calendar.",
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased font-sans bg-black">
         <Navbar />
+        <Analytics />
         {children}
       </body>
     </html>
