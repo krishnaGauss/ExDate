@@ -6,6 +6,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 export const metadata = {
   title: "ExDate | The honest Indian Dividend Calendar.",
   description: "We calculate the real yield based on live prices, so you know exactly what hits your bank account.",
+  verification: {
+    google: "TxKEhrepIhLpG2nugCb9F94KCxollpr1cfHwdu_VmY4",
+  },
 };
 
 export default function RootLayout({

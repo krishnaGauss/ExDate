@@ -26,7 +26,7 @@ export default function Navbar() {
             About Us
           </Link>
           <Link href="/info" className="text-lg font-medium text-neutral-400 hover:text-white transition-colors">
-            Info
+            Calendar
           </Link>
         </div>
 
